@@ -1,1 +1,46 @@
 .vs/
+.vscode/
+
+# Visual Studio user-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio / MSBuild caches
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+ipch/
+.VC.db
+.VC.VC.opendb
+*.VC.db
+*.VC.opendb
+*.opensdf
+*.sdf
+*.cache
+*.vsidx
+
+# C/C++ build outputs
+*.obj
+*.o
+*.pch
+*.pdb
+*.idb
+*.ilk
+*.ipdb
+*.iobj
+*.tlog
+*.lastbuildstate
+*.recipe
+*.log
+*.tmp
+*.exe
+
+# Project-specific generated outputs
+output*.bmp
