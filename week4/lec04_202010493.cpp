@@ -21,7 +21,8 @@ void HistogramStretching(BYTE*Img, int* Histo, BYTE*Out, int W, int H);
 void ObtainAHisto(int* Histo, int* AHisto);
 void HistogramEqualization(BYTE*Img, int* Histo, int* AHisto, BYTE*Out, int W, int H);
 void Binarization(BYTE*Img, BYTE*Out, int W, int H, BYTE Threshold);
-// int GonzalezBinThresh(); // <-과제
+int GonzalezBinThresh(BYTE*Img, BYTE*Out, int*Histo, int W, int H, int tolerance);
+void GetMinMax(int*Histo, BYTE*Low, BYTE*High);
 
 int main() {
     fp = fopen("coin.bmp", "rb");
@@ -41,7 +42,14 @@ int main() {
     ObtainHistogram(Image,Histo,hInfo.biWidth,hInfo.biHeight);
     ObtainAHisto(Histo,AHisto);
 
-    // int Thres = GonzalezBinThresh();
+    int Thres = GonzalezBinThresh(Image,Output,Histo,hInfo.biWidth,hInfo.biHeight,2);
+    
+    if (Thres == -1) {
+        printf("Error: threshold calculation failed\n");
+        freeer(Image, Output);
+        fclose(fp);
+        return -1;
+    }
 
 	sameImg(ImgSize, Image, Output);
     BrightnessAdj(Image,Output,hInfo.biWidth,hInfo.biHeight,70);
@@ -49,7 +57,7 @@ int main() {
     InverseImg (Image, Output, hInfo.biWidth, hInfo.biHeight);
     HistogramStretching(Image,Histo,Output,hInfo.biWidth,hInfo.biHeight);
     HistogramEqualization(Image,Histo,AHisto,Output,hInfo.biWidth,hInfo.biHeight);
-    Binarization(Image, Output, hInfo.biWidth, hInfo.biHeight, 80);
+    Binarization(Image, Output, hInfo.biWidth, hInfo.biHeight, Thres);
     freeer(Image, Output);
 };
 
@@ -102,19 +110,7 @@ void HistogramStretching(BYTE*Img, int*Histo, BYTE*Out, int W, int H){
     int ImgSize = W*H;
     BYTE Low, High;
 
-    for(int i = 0; i < 256; i++){
-        if(Histo[i] != 0) {
-            Low = i;
-            break;
-        };
-    };
-
-    for(int i = 255; i >=0; i--){
-        if(Histo[i] != 0) {
-            High = i;
-            break;
-        };
-    };
+    GetMinMax(Histo, &Low, &High);
 
     for(int i = 0; i < ImgSize; i++){
         Out[i] = (BYTE)(Img[i] - Low) / (double)(High - Low) * 255.0;
@@ -144,6 +140,7 @@ void HistogramEqualization(BYTE*Img, int* Histo, int* AHisto, BYTE*Out, int W, i
 
 void Binarization(BYTE*Img, BYTE*Out, int W, int H, BYTE Threshold){
     int ImgSize = W*H;
+    char filename[200];
     for(int i = 0; i < ImgSize; i++){
         if(Img[i] < Threshold){
             Out[i] = 0;
@@ -151,8 +148,67 @@ void Binarization(BYTE*Img, BYTE*Out, int W, int H, BYTE Threshold){
             Out[i] = 255;
         }
     }
-    outputPrinter("binarized", ImgSize, Img, Out);
+    snprintf(filename, sizeof(filename), "binarized(Thresh_%u)", Threshold);
+    outputPrinter(filename, ImgSize, Img, Out);
 };
+
+int GonzalezBinThresh(BYTE*Img, BYTE*Out, int*Histo, int W, int H, int tolerance){
+    int ImgSize = W * H;
+    BYTE Low=0, High=0;
+
+    GetMinMax(Histo, &Low, &High);
+    int T1 = (Low + High)/2;
+    int T2;
+
+    while(true){
+        int ALow = 0, AHigh = 0;
+        int LowCount = 0, HighCount = 0;
+        int m1, m2;
+    
+        for (int i = Low; i <= T1; i ++){
+            if(Histo[i] != 0){
+                ALow = ALow + i*Histo[i];
+                LowCount = LowCount + Histo[i];
+            }
+        }
+
+        for (int i = T1 + 1; i <= High; i ++){
+            if(Histo[i] != 0){
+                AHigh = AHigh + i*Histo[i];
+                HighCount = HighCount + Histo[i];
+            }
+        }
+
+        if(LowCount == 0 || HighCount == 0){
+            return -1;
+        }
+        m1 = ALow / LowCount;
+        m2 = AHigh / HighCount;
+        T2 = (m1 + m2)/2;
+
+        if(abs(T2 - T1) < tolerance){
+            break;
+        }else{
+            T1 = T2;
+        };
+    };
+    return T1;
+};
+
+void GetMinMax(int*Histo, BYTE*Low, BYTE*High){
+    for (int i = 0; i <= 255; i++){
+        if(Histo[i] != 0){
+            *Low = i;
+            break;
+        };
+    };
+    for (int i = 255; i >= 0; i--){
+        if(Histo[i] != 0){
+            *High = i;
+            break;
+        };
+    };
+}
 
 void outputPrinter(const char* filename, int ImgSize, BYTE* Image, BYTE* Output){
     char path[256];
