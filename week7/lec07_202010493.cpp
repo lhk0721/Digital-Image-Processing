@@ -166,8 +166,8 @@ void Prewitt_X_Conv(BYTE* Img, BYTE* Out, int W, int H) // Prewitt �����
 void Prewitt_Y_Conv(BYTE* Img, BYTE* Out, int W, int H) // Prewitt ����ũ X
 {
 	double Kernel[3][3] = { -1.0, -1.0, -1.0,
-										0.0, 0.0, 0.0,
-										1.0, 1.0, 1.0 };
+                            0.0, 0.0, 0.0,
+                            1.0, 1.0, 1.0 };
 	double SumProduct = 0.0;
 	for (int i = 1; i < H - 1; i++) { // Y��ǥ (��)
 		for (int j = 1; j < W - 1; j++) { // X��ǥ (��)
@@ -186,8 +186,8 @@ void Prewitt_Y_Conv(BYTE* Img, BYTE* Out, int W, int H) // Prewitt �����
 void Sobel_X_Conv(BYTE* Img, BYTE* Out, int W, int H) // Prewitt ����ũ X
 {
 	double Kernel[3][3] = { -1.0, 0.0, 1.0,
-										-2.0, 0.0, 2.0,
-										-1.0, 0.0, 1.0 };
+                            -2.0, 0.0, 2.0,
+                            -1.0, 0.0, 1.0 };
 	double SumProduct = 0.0;
 	for (int i = 1; i < H - 1; i++) { // Y��ǥ (��)
 		for (int j = 1; j < W - 1; j++) { // X��ǥ (��)
@@ -206,8 +206,8 @@ void Sobel_X_Conv(BYTE* Img, BYTE* Out, int W, int H) // Prewitt ����ũ 
 void Sobel_Y_Conv(BYTE* Img, BYTE* Out, int W, int H) // Prewitt ����ũ X
 {
 	double Kernel[3][3] = { -1.0, -2.0, -1.0,
-										0.0, 0.0, 0.0,
-										1.0, 2.0, 1.0 };
+                            0.0, 0.0, 0.0,
+                            1.0, 2.0, 1.0 };
 	double SumProduct = 0.0;
 	for (int i = 1; i < H - 1; i++) { // Y��ǥ (��)
 		for (int j = 1; j < W - 1; j++) { // X��ǥ (��)
@@ -226,8 +226,8 @@ void Sobel_Y_Conv(BYTE* Img, BYTE* Out, int W, int H) // Prewitt ����ũ 
 void Laplace_Conv(BYTE* Img, BYTE* Out, int W, int H) // Prewitt ����ũ X
 {
 	double Kernel[3][3] = { -1.0, -1.0, -1.0,
-										-1.0, 8.0, -1.0,
-										-1.0, -1.0, -1.0 };
+                            -1.0, 8.0, -1.0,
+                            -1.0, -1.0, -1.0 };
 	double SumProduct = 0.0;
 	for (int i = 1; i < H - 1; i++) { // Y��ǥ (��)
 		for (int j = 1; j < W - 1; j++) { // X��ǥ (��)
@@ -514,16 +514,12 @@ int main()
 
 	// AverageConv(Image, Output, hInfo.biWidth, hInfo.biHeight);
 
-    Binarization(Image, Temp,hInfo.biWidth, hInfo.biWidth, 100);
+    Binarization(Image, Temp,hInfo.biWidth, hInfo.biHeight, 100);
     m_BlobColoring(Temp,hInfo.biHeight, hInfo.biWidth);
     for(int i = 0; i < ImgSize; i++) Output[i] = Image[i];
     BinaryImageEdgeDetection(Temp, Output,W,H);
 
-
-
-
 	SaveBMPFile(hf, hInfo, hRGB, Output, hInfo.biWidth, hInfo.biHeight, "output_bin_edge.bmp");
-
 
 	free(Image);
 	free(Output);
