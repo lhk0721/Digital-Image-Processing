@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <Windows.h>
+#include <math.h>
 BYTE temp[9];
 
 // ===== Image Quality Adjustment ======
+void SameImage(BYTE* Img, BYTE* Out, int W, int H);
 void InverseImage(BYTE* Img, BYTE* Out, int W, int H);
 void BrightnessAdj(BYTE* Img, BYTE* Out, int W, int H, int Val);
 void ContrastAdj(BYTE* Img, BYTE* Out, int W, int H, double Val);
@@ -29,7 +31,7 @@ void Laplace_Conv(BYTE* Img, BYTE* Out, int W, int H);
 void Laplace_Conv_DC(BYTE* Img, BYTE* Out, int W, int H);
 
 // ====== Utilities ======
-void SaveBMPFile(BITMAPFILEHEADER* hf, BITMAPINFOHEADER* hInfo, RGBQUAD* hRGB, BYTE* Output, int W, int H, const char* FileName);
+void SaveBMPFile(BITMAPFILEHEADER hf, BITMAPINFOHEADER hInfo, RGBQUAD* hRGB, BYTE* Output, int W, int H, const char* FileName);
 void swap(BYTE* a, BYTE* b);
 BYTE Median(BYTE* arr, int size);
 BYTE MaxPooling(BYTE* arr, int size);
@@ -41,6 +43,16 @@ int pop(short* stackx, short* stacky, short* vx, short* vy, int* top);
 void m_BlobColoring(BYTE* CutImage, int height, int width);
 void BinaryImageEdgeDetection(BYTE* Bin, BYTE* Out, int W, int H);
 
+// ===== Geometric Transformation =====
+void VerticalFlip(BYTE* img, int W, int H);
+void HorizontalFlip(BYTE* img, int W, int H);
+void Translation(BYTE*Image, BYTE*Output,int W, int H, int Tx, int Ty);
+void Scaling(BYTE*Image, BYTE*Output,int W, int H, double SF_X, double SF_Y);
+void Rotation(BYTE*Image, BYTE*Output,int W, int H, int Angle);
+
+// ===== Color processing =====
+void FillColor(BYTE*Image, int X, int Y, int W, int H, BYTE R, BYTE G, BYTE B);
+
 // ====== MAIN ======
 int main(){
     // BMP Header Variables
@@ -50,8 +62,7 @@ int main(){
 
     // ===== Open File =====
     FILE* fp;
-    fp = fopen("coin.bmp", "rb");
-    // fp = fopen("LENNA.bmp", "rb");
+    fp = fopen("tcsample.bmp", "rb");
     if(fp == NULL){
         printf("File not found!\n");
         return -1;
@@ -60,42 +71,62 @@ int main(){
     // ===== Read Headers ===== 
     fread(&hf,sizeof(BITMAPFILEHEADER),1,fp);
     fread(&hInfo, sizeof(BITMAPINFOHEADER),1,fp);
-    fread(&hRGB,sizeof(RGBQUAD),256,fp);
-
-    // ===== Allocate Memory =====
     int W = hInfo.biWidth, H = hInfo.biHeight;
     int ImgSize = W * H;
+    BYTE * Image;
+    BYTE * Output;
 
-    BYTE * Image = (BYTE *)malloc(ImgSize);
-    BYTE * Temp = (BYTE *)malloc(ImgSize);
-    BYTE * Output = (BYTE *)malloc(ImgSize);
+    if(hInfo.biBitCount == 24){ // true color
+        // ===== Allocate Memory =====
+        Image = (BYTE *)malloc(ImgSize*3);
+        Output = (BYTE *)malloc(ImgSize*3);
+        // ===== Read Image Data =====
+        fread(Image, sizeof(BYTE), ImgSize*3, fp);
+
+    }else{ //index(gray)
+        fread(&hRGB,sizeof(RGBQUAD),256,fp);
+        // ===== Allocate Memory =====
+        Image = (BYTE *)malloc(ImgSize);
+        Output = (BYTE *)malloc(ImgSize);
+        // ===== Read Image Data =====
+        fread(Image, sizeof(BYTE), ImgSize, fp);
+    }
 
     // ===== Histogram =====
+    /*
     int Histo[256] = {0};
     int AHisto[256] = {0};
     ObtainHistogram(Image, Histo, W, H);
     ObtainAHistogram(Histo, AHisto);
+    */ 
 
-    // ===== Read Image Data =====
-    fread(Image, sizeof(BYTE), ImgSize, fp);
     fclose(fp);
 
     // ===== Processing =====
     // ----- Image Quality Adjustment -----
-    // InverseImage(Image,Output,W,H);
-    // BrightnessAdj(Image, Output,W,H,-50);
-    // ContrastAdj(Image, Output,W,H,1.5);
+    SameImage(Image,Output,W,H);
+    /*
+    InverseImage(Image,Output,W,H);
+    BrightnessAdj(Image, Output,W,H,-50);
+    ContrastAdj(Image, Output,W,H,1.5);
+    */ 
 
     // ----- Histogram Processing -----
-    // HistogramEqualization(Image, Output, AHisto, W, H);
-    // HistogramStretching(Image,Output, Histo,W,H);
+    /*
+    HistogramEqualization(Image, Output, AHisto, W, H);
+    HistogramStretching(Image,Output, Histo,W,H);
+    */ 
 
     // ----- Binarization -----
-    // int thresh = GonzalezBinThresh(Histo,W,H);
-    // Binarization(Image, Output, W,H,thresh);
+    /*
+    int thresh = GonzalezBinThresh(Histo,W,H);
+    Binarization(Image, Output, W,H,thresh);
+    */ 
 
-    // ----- Convolusion Filtering
-    // AverageConv(Image, Output, W,H);
+    // ----- Convolusion Filtering -----
+    /*
+    AverageConv(Image, Output, W,H);
+    */ 
 
     // ----- median filtering -----
     /*
@@ -117,40 +148,154 @@ int main(){
     free(temp);
     */
 
+    // ----- Geometric Transformation -----
+    // VerticalFlip(Image, W, H);
+    // HorizontalFlip(Image, W,H);
+    // Translation(Image, Output, W,H, 100, 40);
+    // Scaling(Image, Output, W, H, 2.0, 0.7);
+    // Rotation(Image, Output, W, H, 60);
+
+
+    // ----- Color processing -----
+    
+    // one pixel
+    // FillColor(Output,50,50,W,H,255,0,0);
+    
+    // line
+    // for(int i = 0; i<W; i++){
+    //     FillColor(Output,i,200,W,H,255,0,0);
+    // }
+
+    // Reck
+    for(int i = 100; i<= 400; i++){
+        for(int j=50;j<=300;j++){
+            FillColor(Output,j,i,W,H,255,0,255);
+        }
+    }
+
+    // Reset
+    for(int i=0; i<H; i++){
+        for(int j=0; j<W; j++){
+            Image[i*W*3 + j*3] = 0;
+            Image[i*W*3 + j*3 + 1] = 0;
+            Image[i*W*3 + j*3 + 2] = 0;
+        }
+    }
+    SameImage(Image,Output,W,H);
+
+    for(int i=0; i<240; i++){ //R
+        for(int j=0; j<W; j++){
+            Output[i*W*3 + j*3 + 2]=255;
+        }
+    }
+    for(int i=120; i<360; i++){ //G
+        for(int j=0; j<W; j++){
+            Output[i*W*3 + j*3 + 1]=255;
+        }
+    }
+    for(int i=240; i<H; i++){ //B
+        for(int j=0; j<W; j++){
+            Output[i*W*3 + j*3]=255;
+        }
+    }
+
+    // Reset
+    for(int i=0; i<H; i++){
+        for(int j=0; j<W; j++){
+            Image[i*W*3 + j*3] = 0;
+            Image[i*W*3 + j*3 + 1] = 0;
+            Image[i*W*3 + j*3 + 2] = 0;
+        }
+    }
+    SameImage(Image,Output,W,H);
+
+    // gradation
+    double wt;
+    for(int i = 0; i < 120; i++){
+        for(int j=0; j<W; j++){
+            wt = j/(double)(W-1);
+            Output[i*W*3 + j*3]= (BYTE)255*(1-wt); //B
+            Output[i*W*3 + j*3 + 1]= (BYTE)255*(wt); //G
+            Output[i*W*3 + j*3 + 2]= (BYTE)255*(wt); //R
+        }
+    }
+    
+    for(int i = 121; i < 240; i++){
+        for(int j=0; j<W; j++){
+            wt = j/(double)(W-1);
+            Output[i*W*3 + j*3]= (BYTE)255*(wt); //B
+            Output[i*W*3 + j*3 + 1]= (BYTE)255*(1-wt); //G
+            Output[i*W*3 + j*3 + 2]= (BYTE)255*(wt); //R
+        }
+    }
+
+    for(int i = 241; i < 360; i++){
+        for(int j=0; j<W; j++){
+            wt = j/(double)(W-1);
+            Output[i*W*3 + j*3]= (BYTE)255*(wt); //B
+            Output[i*W*3 + j*3 + 1]= (BYTE)255*(wt); //G
+            Output[i*W*3 + j*3 + 2]= (BYTE)255*(1-wt); //R
+        }
+    }
+
     // ===== Save Output =====
-    SaveBMPFile(&hf,&hInfo,hRGB,Output,W,H,"output_AverageConv.bmp");
+    
+    SaveBMPFile(hf,hInfo,hRGB,Output,W,H,"output_tcsample.bmp");
 
     // ===== Free Memory =====
     free(Image);
-    free(Temp);
     free(Output);
     return 0;
 };
 
 void SaveBMPFile(
-    BITMAPFILEHEADER* hf,
-    BITMAPINFOHEADER* hInfo,
+    BITMAPFILEHEADER hf,
+    BITMAPINFOHEADER hInfo,
     RGBQUAD* hRGB,
     BYTE* Output,
     int W, int H,
     const char* FileName){
     // Open File
     FILE * fp = fopen(FileName, "wb");
+    if(hInfo.biBitCount == 24){
+        // Write Headers
+        fwrite(&hf, sizeof(BYTE), sizeof(BITMAPFILEHEADER), fp);
+        fwrite(&hInfo, sizeof(BYTE), sizeof(BITMAPINFOHEADER), fp);
 
-    // Write Headers
-    fwrite(hf, sizeof(BYTE), sizeof(BITMAPFILEHEADER), fp);
-    fwrite(hInfo, sizeof(BYTE), sizeof(BITMAPINFOHEADER), fp);
-    fwrite(hRGB, sizeof(RGBQUAD), 256, fp);
+        // Write Image Data
+        fwrite(Output, sizeof(BYTE), W*H*3, fp);
 
-    // Write Image Data
-    fwrite(Output, sizeof(BYTE), W*H, fp);
-    
+    }else{
+        // Write Headers
+        fwrite(&hf, sizeof(BYTE), sizeof(BITMAPFILEHEADER), fp);
+        fwrite(&hInfo, sizeof(BYTE), sizeof(BITMAPINFOHEADER), fp);
+        fwrite(hRGB, sizeof(RGBQUAD), 256, fp);
+
+        // Write Image Data
+        fwrite(Output, sizeof(BYTE), W*H, fp);
+    }
+
     // Close File
     fclose(fp);
 }
 
-// ===== Image Quality Adjustment ======
+/*
+void swap(BYTE* a, BYTE* b){
+    BYTE temp = *a;
+    *a = *b;
+    *b = temp;
+};
+*/ 
 
+// ===== Image Quality Adjustment ======
+void SameImage(BYTE* Img, BYTE* Out, int W, int H){
+    int ImgSize = W*H*3;
+    for(int i = 0; i < ImgSize; i++){
+        Out[i] = Img[i];
+    }
+};
+
+/*
 void InverseImage(BYTE* Img, BYTE* Out, int W, int H){
     int ImgSize = W*H;
     for(int i = 0; i < ImgSize; i++){
@@ -186,7 +331,10 @@ void ContrastAdj(BYTE* Img, BYTE* Out, int W, int H, double Val){
     };
 };
 
+*/
+
 // ====== Histogram ======
+/*
 void ObtainHistogram(BYTE* Img, int* Histo, int W, int H){
     int ImgSize = W*H;
     for (int i = 0; i < ImgSize; i++){
@@ -231,8 +379,10 @@ void HistogramStretching(BYTE* Img, BYTE* Out, int* Histo, int W, int H){
         Out[i] = (BYTE)((Img[i] - min)/(double)(max-min) * 255.0);
     }
 };
+*/
 
 // ===== Binarization =====
+/*
 void Binarization(BYTE* Img, BYTE* Out, int W, int H, BYTE Threshold){
     int ImgSize = W*H;
     for (int i = 0; i < ImgSize; i++){
@@ -278,7 +428,10 @@ int GonzalezBinThresh(int* Histo, int W, int H){
     return threshold;
 }
 
+*/ 
+
 // ===== Convolution Filters =====
+/*
 void AverageConv(BYTE* Img, BYTE* Out, int W, int H){
     double Kernel[3][3] = {
         {1.0, 1.0, 1.0},
@@ -407,12 +560,6 @@ void Prewitt_Y_Conv(BYTE* Img, BYTE* Out, int W, int H){
     };
 };
 
-void swap(BYTE* a, BYTE* b){
-    BYTE temp = *a;
-    *a = *b;
-    *b = temp;
-};
-
 BYTE Median(BYTE* arr, int size){
     const int S = size;
     for(int i = 0; i < size-1; i++){
@@ -448,8 +595,10 @@ BYTE MinPooling(BYTE* arr, int size){
     }
     return arr[S-1];
 };
+*/ 
 
 // ===== labelling =====
+/*
 int push(short* stackx, short* stacky, int arr_size, short vx, short vy, int* top)
 {
 	if (*top >= arr_size) return(-1);
@@ -551,4 +700,75 @@ void BinaryImageEdgeDetection(BYTE* Bin, BYTE*Out, int W, int H){
             };
         }
     }
+}
+
+*/ 
+
+// ===== Geometric Transformation =====
+/*
+
+
+// ----- flip -----
+void VerticalFlip(BYTE* img, int W, int H){
+    for(int i = 0; i < H/2; i++){
+        for(int j = 0; j < W; j++){
+            swap(&img[i*W + j], &img[(H-1-i)*W + j]);
+        }
+    }
+};
+
+void HorizontalFlip(BYTE* img, int W, int H){
+    for(int i = 0; i < W/2; i++){
+        for(int j = 0; j < H; j++){
+            swap(&img[j*W + i], &img[j*W + (W-1-i)]);
+        }
+    }
+};
+
+// ----- Translation -----
+void Translation(BYTE*Image, BYTE*Output,int W, int H, int Tx, int Ty){
+    Ty *= -1;
+    for(int i=0; i<H; i++){
+        for(int j=0; j <W; j++){
+            if(((i + Ty < H) && (i + Ty >= 0)) && ((j + Tx < W) && (j + Tx >=0))){
+                Output[(i + Ty)*W + (j+Tx)] = Image[i*W + j];
+            }
+        }
+    }
+}
+
+// ----- Scaling -----
+void Scaling(BYTE*Image, BYTE*Output,int W, int H, double SF_X, double SF_Y){
+    int tmpX,tmpY;
+    for(int i = 0; i < H; i++){
+        for(int j = 0; j < W; j++){
+            tmpX = (int)(j/SF_X);
+            tmpY = (int)(i/SF_Y);
+            if((tmpY < H) && (tmpX < W)){
+                Output[i*W + j] = Image[tmpY*W + tmpX];
+            }
+        }
+    }
+}
+
+// ----- Rotation -----
+void Rotation(BYTE*Image, BYTE*Output,int W, int H, int Angle){
+    int tmpX,tmpY;
+    double Radian = Angle*3.141592/180.0;
+    for(int i = 0; i < H; i++){
+        for(int j = 0; j < W; j++){
+            tmpX = (int)(cos(Radian)*j + sin(Radian)*i);
+            tmpY = (int)(-sin(Radian)*j + cos(Radian)*i);
+            if(((tmpY < H) && (tmpY >= 0)) && ((tmpX < W) && (tmpX >=0))){
+                Output[i*W + j] = Image[ tmpY*W + tmpX];
+            }
+        }
+    }
+};
+*/
+
+void FillColor(BYTE*Image, int X, int Y, int W, int H, BYTE R, BYTE G, BYTE B){
+    Image[Y*W*3 + X*3] = B;
+    Image[Y*W*3 + X*3 +1] = G;
+    Image[Y*W*3 + X*3 +2] = R;
 }

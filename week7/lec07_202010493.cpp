@@ -507,7 +507,7 @@ int main()
 	// 				temp[(m + Margin) * Length + (n + Margin)] = Image[(i+m)*W + j+n];
 	// 			}
 	// 		}
-	// 		Output[i * W + j] = Median(temp, WSize); //중위값 계산,저장
+			// Output[i * W + j] = Median(temp, WSize); //중위값 계산,저장
 	// 	}
 	// }
 	// free(temp);
