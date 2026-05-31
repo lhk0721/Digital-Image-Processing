@@ -214,27 +214,27 @@ int main(){
     for(int i = 0; i < 120; i++){
         for(int j=0; j<W; j++){
             wt = j/(double)(W-1);
-            Output[i*W*3 + j*3]= (BYTE)255*(1-wt); //B
-            Output[i*W*3 + j*3 + 1]= (BYTE)255*(wt); //G
-            Output[i*W*3 + j*3 + 2]= (BYTE)255*(wt); //R
+            Output[i*W*3 + j*3]= (BYTE)(255*(1-wt)); //B
+            Output[i*W*3 + j*3 + 1]= (BYTE)(255*(wt)); //G
+            Output[i*W*3 + j*3 + 2]= (BYTE)(255*(wt)); //R
         }
     }
     
     for(int i = 121; i < 240; i++){
         for(int j=0; j<W; j++){
             wt = j/(double)(W-1);
-            Output[i*W*3 + j*3]= (BYTE)255*(wt); //B
-            Output[i*W*3 + j*3 + 1]= (BYTE)255*(1-wt); //G
-            Output[i*W*3 + j*3 + 2]= (BYTE)255*(wt); //R
+            Output[i*W*3 + j*3]= (BYTE)(255*(wt)); //B
+            Output[i*W*3 + j*3 + 1]= (BYTE)(255*(1-wt)); //G
+            Output[i*W*3 + j*3 + 2]= (BYTE)(255*(wt)); //R
         }
     }
 
     for(int i = 241; i < 360; i++){
         for(int j=0; j<W; j++){
             wt = j/(double)(W-1);
-            Output[i*W*3 + j*3]= (BYTE)255*(wt); //B
-            Output[i*W*3 + j*3 + 1]= (BYTE)255*(wt); //G
-            Output[i*W*3 + j*3 + 2]= (BYTE)255*(1-wt); //R
+            Output[i*W*3 + j*3]= (BYTE)(255*(wt)); //B
+            Output[i*W*3 + j*3 + 1]= (BYTE)(255*(wt)); //G
+            Output[i*W*3 + j*3 + 2]= (BYTE)(255*(1-wt)); //R
         }
     }
 
