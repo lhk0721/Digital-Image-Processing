@@ -8,7 +8,7 @@
 void SaveBMPFile(
     BITMAPFILEHEADER hf,
     BITMAPINFOHEADER hInfo,
-    RGBQUAD hRGB,
+    RGBQUAD* hRGB,
     BYTE* Output,
     int W, int H,
     const char* Filename
@@ -54,7 +54,15 @@ void FillRecktangleGradation(
     int W, int H,
     BYTE Rs, BYTE Gs, BYTE Bs,
     BYTE Rf, BYTE Gf, BYTE Bf
-)
+);
+
+void RGB2YCbCr(
+    BYTE* Image,
+    BYTE* Y,
+    BYTE* Cb,
+    BYTE* Cr,
+    int W, int H
+);
 
 int main(){
     // BMP Header Variables
@@ -78,10 +86,13 @@ int main(){
     int W = hInfo.biWidth;
     int H = hInfo.biHeight;
     int ImgSize = W*H;
-
+    
     // Allocate Memory
     BYTE* Image;
     BYTE* Output;
+    BYTE* Y = (BYTE*)malloc(ImgSize);
+    BYTE* Cb = (BYTE*)malloc(ImgSize);
+    BYTE* Cr = (BYTE*)malloc(ImgSize);
     if(hInfo.biBitCount == 24){
         // True Color
         Image = (BYTE*)malloc(ImgSize*3);
@@ -89,12 +100,77 @@ int main(){
         fread(Image, sizeof(BYTE), ImgSize*3, fp);
     }else{
         // Gray Scale
+        fread(hRGB, sizeof(RGBQUAD), 256, fp);
         Image = (BYTE*)malloc(ImgSize);
         Output = (BYTE*)malloc(ImgSize);
         fread(Image, sizeof(BYTE), ImgSize, fp);
     }
     fclose(fp);
 
+    // SameImage(Image,Output,W,H);
+    ResetOutput(Output,W,H);
+
+    // Red Filer masking (RGB model)
+    // for(int i=0; i<H; i++){
+    //     for(int j=0; j<W; j++){
+    //         if(
+    //             (Image[i*W*3 + j*3 + 2] > 130) &&
+    //             (Image[i*W*3 + j*3 + 1] < 50) &&
+    //             (Image[i*W*3 + j*3 + 0] < 150)
+    //         ){
+    //             Output[i*W*3 + j*3 + 0] = Image[i*W*3 + j*3 + 0];
+    //             Output[i*W*3 + j*3 + 1] = Image[i*W*3 + j*3 + 1];
+    //             Output[i*W*3 + j*3 + 2] = Image[i*W*3 + j*3 + 2];
+    //         }else{
+    //             Output[i*W*3 + j*3 + 0] = 0;
+    //             Output[i*W*3 + j*3 + 1] = 0;
+    //             Output[i*W*3 + j*3 + 2] = 0;
+    //         }
+    //     }
+    // }
+
+    RGB2YCbCr(Image, Y, Cb, Cr, W,H);
+
+    /* //for checking purpose
+    fp = fopen("Y.raw","wb");
+    fwrite(Y, sizeof(BYTE), W*H, fp);
+    fclose(fp);
+    fp = fopen("Cb.raw","wb");
+    fwrite(Cb, sizeof(BYTE), W*H, fp);
+    fclose(fp);
+    fp = fopen("Cr.raw","wb");
+    fwrite(Cr, sizeof(BYTE), W*H, fp);
+    fclose(fp);
+    // Strawberry -> (Cb > 130) && (Cr > 200)
+    */
+
+    ResetOutput(Output,W,H);
+    // Red Filer masking (YCbCr)
+    for(int i = 0; i < H; i++){
+        for(int j = 0; j < W; j++){
+            if(
+                (Cb[i*W + j] < 140) &&
+                (Cr[i*W + j] > 190)
+            ){
+                Output[i*W*3 + j*3 + 0] = Image[i*W*3 + j*3 + 0];
+                Output[i*W*3 + j*3 + 1] = Image[i*W*3 + j*3 + 1];
+                Output[i*W*3 + j*3 + 2] = Image[i*W*3 + j*3 + 2];
+            }else{
+                Output[i*W*3 + j*3 + 0] = 0;
+                Output[i*W*3 + j*3 + 1] = 0;
+                Output[i*W*3 + j*3 + 2] = 0;
+            }
+        }
+    }
+
+    SaveBMPFile(hf,hInfo,hRGB,Output,W,H,"fruit_output.bmp");
+
+    // Free Memory
+    free(Image);
+    free(Output);
+    free(Y);
+    free(Cb);
+    free(Cr);
 }
 
 // ===== Function Group =====
@@ -102,7 +178,7 @@ int main(){
 void SaveBMPFile(
     BITMAPFILEHEADER hf,
     BITMAPINFOHEADER hInfo,
-    RGBQUAD hRGB,
+    RGBQUAD* hRGB,
     BYTE* Output,
     int W, int H,
     const char* Filename
@@ -115,7 +191,7 @@ void SaveBMPFile(
     }else{
         fwrite(&hf, sizeof(BYTE), sizeof(BITMAPFILEHEADER), fp);
         fwrite(&hInfo, sizeof(BYTE), sizeof(BITMAPINFOHEADER), fp);
-        fwrite(&hRGB, sizeof(RGBQUAD), 256, fp);
+        fwrite(hRGB, sizeof(RGBQUAD), 256, fp);
         fwrite(Output, sizeof(BYTE), W*H, fp);
     }
     fclose(fp);
@@ -202,6 +278,36 @@ void FillRecktangleGradation(
             Output[i*W*3 + j*3 + 0] = B;
             Output[i*W*3 + j*3 + 1] = G;
             Output[i*W*3 + j*3 + 2] = R;
+        }
+    }
+}
+
+void RGB2YCbCr(
+    BYTE* Image,
+    BYTE* Y,
+    BYTE* Cb,
+    BYTE* Cr,
+    int W, int H
+){
+    for(int i=0; i<H; i++){
+        for(int j=0; j<W; j++){
+            Y[i*W + j] = (BYTE)(
+                0.299*Image[(i*W + j)*3 +2] +
+                0.587*Image[(i*W + j)*3 +1] +
+                0.114*Image[(i*W + j)*3 +0]
+            );
+            Cb[i*W + j] = (BYTE)(
+                -0.16874*Image[(i*W + j)*3 +2] +
+                -0.3313* Image[(i*W + j)*3 +1] +
+                0.5*     Image[(i*W + j)*3 +0] +
+                128
+            );
+            Cr[i*W + j] = (BYTE)(
+                0.5*    Image[(i*W + j)*3 +2] +
+                -0.4187*Image[(i*W + j)*3 +1] +
+                -0.0813*Image[(i*W + j)*3 +0] +
+                128
+            );
         }
     }
 }
