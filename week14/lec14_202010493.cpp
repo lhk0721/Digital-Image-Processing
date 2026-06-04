@@ -688,6 +688,7 @@ void FeatureExtractThinImage(
                     freq += 1;
                 }
             }
+            
             if(line[0] != line[7]){   // wrap: Circle
                 freq += 1;
             }
